@@ -121,6 +121,12 @@ import {
   ResourceServerHappyPathWithResourceScenario,
   ResourceServerHappyPathWithScopeScenario
 } from './ema/resource-authorization-server/resource-authorization-happy-path';
+import {
+  ResourceServerErrorPathScenario,
+  ResourceServerInvalidScopeScenario,
+  ResourceServerInvalidSignatureScenario,
+  ResourceServerUntrustedIdpScenario
+} from './ema/resource-authorization-server/resource-authorization-error-path';
 
 import { HttpStandardHeadersScenario } from './client/http-standard-headers';
 import {
@@ -308,7 +314,11 @@ const allScenariosListForResourceAuthorizationServer: ScenarioForResourceAuthori
     new ResourceServerMetadataScenario(),
     new ResourceServerHappyPathScenario(),
     new ResourceServerHappyPathWithResourceScenario(),
-    new ResourceServerHappyPathWithScopeScenario()
+    new ResourceServerHappyPathWithScopeScenario(),
+    new ResourceServerErrorPathScenario(),
+    new ResourceServerInvalidScopeScenario(),
+    new ResourceServerInvalidSignatureScenario(),
+    new ResourceServerUntrustedIdpScenario()
   ];
 
 // Scenarios map for the EMA Resource Authorization Server - built from list
