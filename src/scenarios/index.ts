@@ -114,6 +114,9 @@ import { listMetadataScenarios } from './client/auth/discovery-metadata';
 import { AuthorizationServerMetadataEndpointScenario } from './authorization-server/authorization-server-metadata';
 import { AuthorizationCodeGrantScenario } from './authorization-server/authorization-code-grant';
 
+// EMA Resource Authorization Server scenarios (ISSUE-470)
+import { ResourceServerMetadataScenario } from './ema/resource-authorization-server/resource-authorization-metadata';
+
 import { HttpStandardHeadersScenario } from './client/http-standard-headers';
 import {
   HttpCustomHeadersScenario,
@@ -296,7 +299,9 @@ export const clientScenariosForAuthorizationServer = new Map<
 
 // All scenarios for the EMA Resource Authorization Server (ISSUE-470)
 const allScenariosListForResourceAuthorizationServer: ScenarioForResourceAuthorizationServer[] =
-  [];
+  [
+    new ResourceServerMetadataScenario()
+  ];
 
 // Scenarios map for the EMA Resource Authorization Server - built from list
 export const resourceAuthorizationServerScenarios = new Map<
