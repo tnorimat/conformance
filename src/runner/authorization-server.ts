@@ -19,6 +19,16 @@ export async function runAuthorizationServerConformanceTest(
   resultDir?: string;
   scenarioDescription: string;
 }> {
+  const scenario = getClientScenarioForAuthorizationServer(scenarioName);
+  if (!scenario) {
+    throw new Error(`Unknown authorization server scenario '${scenarioName}'`);
+  }
+  if (specVersion && !matchesSpecVersion(scenario.source, specVersion)) {
+    throw new Error(
+      `Authorization server scenario '${scenarioName}' is not applicable at ${specVersion}. Select a matching scenario or omit --spec-version.`
+    );
+  }
+
   let resultDir: string | undefined;
 
   if (outputDir) {
@@ -30,8 +40,21 @@ export async function runAuthorizationServerConformanceTest(
     await fs.mkdir(resultDir, { recursive: true });
   }
 
-  // Scenario is guaranteed to exist by CLI validation
-  const scenario = getClientScenarioForAuthorizationServer(scenarioName)!;
+  let prerequisiteChecks: ConformanceCheck[] = [];
+  if (
+    options.clientId &&
+    scenario.metadataScenario &&
+    !details[scenario.metadataScenario]
+  ) {
+    const prerequisite = await runAuthorizationServerConformanceTest(
+      options,
+      scenario.metadataScenario,
+      details,
+      outputDir,
+      specVersion
+    );
+    prerequisiteChecks = prerequisite.checks;
+  }
 
   console.log(
     `Running client scenario for authorization server '${scenarioName}' against server: ${options.url}`
@@ -44,17 +67,22 @@ export async function runAuthorizationServerConformanceTest(
       )
     : checks;
 
+  if (filtered[0]?.status === 'SUCCESS' && filtered[0].details) {
+    details[scenarioName] = filtered[0].details;
+  }
+
+  const reportedChecks = [...prerequisiteChecks, ...filtered];
   if (resultDir) {
     await fs.writeFile(
       path.join(resultDir, 'checks.json'),
-      JSON.stringify(filtered, null, 2)
+      JSON.stringify(reportedChecks, null, 2)
     );
 
     console.log(`Results saved to ${resultDir}`);
   }
 
   return {
-    checks: filtered,
+    checks: reportedChecks,
     resultDir,
     scenarioDescription: scenario.description
   };

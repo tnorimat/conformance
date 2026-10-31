@@ -7,7 +7,8 @@ import {
   DatedSpecVersion,
   ScenarioSpecTag,
   DATED_SPEC_VERSIONS,
-  DRAFT_PROTOCOL_VERSION
+  DRAFT_PROTOCOL_VERSION,
+  LATEST_SPEC_VERSION
 } from '../types';
 import { InitializeScenario } from './client/initialize';
 import { SkillsNoPrefetchScenario } from './client/skills/no-prefetch';
@@ -118,6 +119,10 @@ import {
 import { listMetadataScenarios } from './client/auth/discovery-metadata';
 import { AuthorizationServerMetadataEndpointScenario } from './authorization-server/authorization-server-metadata';
 import { AuthorizationCodeGrantScenario } from './authorization-server/authorization-code-grant';
+import {
+  AuthorizationServerMetadata20260728Scenario,
+  AuthorizationCodeGrant20260728Scenario
+} from './authorization-server/2026-07-28';
 import { DPoPAuthorizationServerScenario } from './authorization-server/dpop';
 
 import { HttpStandardHeadersScenario } from './client/http-standard-headers';
@@ -301,6 +306,8 @@ const allClientScenariosListForAuthorizationServer: ClientScenarioForAuthorizati
     // Authorization server scenarios
     new AuthorizationServerMetadataEndpointScenario(),
     new AuthorizationCodeGrantScenario(),
+    new AuthorizationServerMetadata20260728Scenario(),
+    new AuthorizationCodeGrant20260728Scenario(),
     new DPoPAuthorizationServerScenario()
   ];
 
@@ -416,6 +423,16 @@ export function listBackcompatScenarios(): string[] {
 
 export function listClientScenariosForAuthorizationServer(): string[] {
   return Array.from(clientScenariosForAuthorizationServer.keys());
+}
+
+export function listDefaultClientScenariosForAuthorizationServer(): string[] {
+  return allClientScenariosListForAuthorizationServer
+    .filter(
+      (s) =>
+        'extensionId' in s.source ||
+        matchesSpecVersion(s.source, LATEST_SPEC_VERSION)
+    )
+    .map((s) => s.name);
 }
 
 // All client-testing scenarios that target the draft spec, derived from the

@@ -5,7 +5,8 @@ import { AuthorizationServerOptions } from '../../schemas';
 import {
   CheckStatus,
   ClientScenarioForAuthorizationServer,
-  ConformanceCheck
+  ConformanceCheck,
+  ScenarioSource
 } from '../../types';
 import { request } from 'undici';
 import { SpecReferences } from '../authorization-server/auth/spec-references';
@@ -13,9 +14,14 @@ import { SpecReferences as ClientSpecReferences } from '../client/auth/spec-refe
 
 type Status = 'SUCCESS' | 'FAILURE';
 
-export class AuthorizationServerMetadataEndpointScenario implements ClientScenarioForAuthorizationServer {
+export class AuthorizationServerMetadataEndpointScenario
+  implements ClientScenarioForAuthorizationServer
+{
   name = 'authorization-server-metadata-endpoint';
-  readonly source = { introducedIn: '2025-03-26' } as const;
+  readonly source: ScenarioSource = {
+    introducedIn: '2025-03-26',
+    removedIn: '2026-07-28'
+  };
   description = `Test authorization server metadata endpoint.
 
 **Authorization Server Implementation Requirements:**

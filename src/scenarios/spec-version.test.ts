@@ -12,7 +12,11 @@ import {
   resolveSpecVersion,
   ALL_SPEC_VERSIONS,
   scenarios,
-  clientScenarios
+  clientScenarios,
+  listClientScenariosForAuthorizationServer,
+  listClientScenariosForAuthorizationServerForSpec,
+  listDefaultClientScenariosForAuthorizationServer,
+  getClientScenarioForAuthorizationServer
 } from './index';
 import {
   DATED_SPEC_VERSIONS,
@@ -31,6 +35,47 @@ describe('specVersions helpers', () => {
       const tags = getScenarioSpecVersions(name);
       expect(tags).toContain('2025-06-18');
     }
+  });
+
+  describe('authorization-server spec-version selection', () => {
+    const existing = [
+      'authorization-server-metadata-endpoint',
+      'authorization-code-grant'
+    ];
+    const wip = [
+      'authorization-server-metadata-endpoint-2026-07-28',
+      'authorization-code-grant-2026-07-28'
+    ];
+
+    it.each(DATED_SPEC_VERSIONS)(
+      'keeps the existing scenarios at %s',
+      (version) => {
+        expect(
+          listClientScenariosForAuthorizationServerForSpec(version)
+        ).toEqual(existing);
+      }
+    );
+
+    it('selects only the WIP pair at 2026-07-28, metadata first', () => {
+      expect(
+        listClientScenariosForAuthorizationServerForSpec('2026-07-28')
+      ).toEqual(wip);
+      for (const name of wip) {
+        expect(getScenarioSpecVersions(name)).toEqual(['2026-07-28']);
+        expect(
+          getClientScenarioForAuthorizationServer(name)?.description
+        ).toContain('Reuses the existing 2025-11-25 checks unchanged');
+      }
+    });
+
+    it('registers both pairs but keeps WIP scenarios out of default runs', () => {
+      const registered = listClientScenariosForAuthorizationServer();
+      expect(registered).toEqual(expect.arrayContaining([...existing, ...wip]));
+      expect(listDefaultClientScenariosForAuthorizationServer()).toEqual([
+        ...existing,
+        'dpop'
+      ]);
+    });
   });
 
   it('scenarios with removedIn do not appear in versions at or after the cutoff', () => {

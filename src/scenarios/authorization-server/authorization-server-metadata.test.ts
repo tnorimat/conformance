@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AuthorizationServerMetadataEndpointScenario } from './authorization-server-metadata.js';
+import { AuthorizationServerMetadata20260728Scenario } from './2026-07-28';
 import { request } from 'undici';
 
 vi.mock('undici', () => ({
@@ -35,140 +36,148 @@ function mockMetadataResponse(body: Record<string, unknown>) {
   } as any);
 }
 
-describe('AuthorizationServerMetadataEndpointScenario', () => {
-  it('returns SUCCESS for valid authorization server metadata', async () => {
-    const scenario = new AuthorizationServerMetadataEndpointScenario();
-    mockMetadataResponse(validMetadata);
+describe.each([
+  ['2025-11-25', AuthorizationServerMetadataEndpointScenario],
+  ['2026-07-28', AuthorizationServerMetadata20260728Scenario]
+] as const)(
+  '%s metadata',
+  (_v, AuthorizationServerMetadataEndpointScenario) => {
+    it('returns SUCCESS for valid authorization server metadata', async () => {
+      const scenario = new AuthorizationServerMetadataEndpointScenario();
+      mockMetadataResponse(validMetadata);
 
-    const checks = await scenario.run(OPTIONS, details);
+      const checks = await scenario.run(OPTIONS, details);
 
-    expect(checks).toHaveLength(2);
+      expect(checks).toHaveLength(2);
 
-    const check = checks[0];
-    expect(check.status).toBe('SUCCESS');
-    expect(check.errorMessage).toBeUndefined();
-    expect(check.details).toBeDefined();
-    expect(check.details!.contentType).toContain('application/json');
-    expect((check.details!.body as any).issuer).toBe(SERVER_URL);
-    expect((check.details!.body as any).authorization_endpoint).toBe(
-      AUTHORIZATION_ENDPOINT
-    );
-    expect((check.details!.body as any).token_endpoint).toBe(TOKEN_ENDPOINT);
-    expect((check.details!.body as any).response_types_supported).toEqual([
-      'code'
-    ]);
-    expect(
-      (check.details!.body as any).code_challenge_methods_supported
-    ).toEqual(['plain', 'S256']);
-  });
-
-  it('returns FAILURE when code_challenge_methods_supported is missing', async () => {
-    const scenario = new AuthorizationServerMetadataEndpointScenario();
-    mockMetadataResponse({
-      issuer: validMetadata.issuer,
-      authorization_endpoint: validMetadata.authorization_endpoint,
-      token_endpoint: validMetadata.token_endpoint,
-      response_types_supported: validMetadata.response_types_supported
+      const check = checks[0];
+      expect(check.id).toBe('authorization-server-metadata');
+      expect(check.status).toBe('SUCCESS');
+      expect(check.errorMessage).toBeUndefined();
+      expect(check.details).toBeDefined();
+      expect(check.details!.contentType).toContain('application/json');
+      expect((check.details!.body as any).issuer).toBe(SERVER_URL);
+      expect((check.details!.body as any).authorization_endpoint).toBe(
+        AUTHORIZATION_ENDPOINT
+      );
+      expect((check.details!.body as any).token_endpoint).toBe(TOKEN_ENDPOINT);
+      expect((check.details!.body as any).response_types_supported).toEqual([
+        'code'
+      ]);
+      expect(
+        (check.details!.body as any).code_challenge_methods_supported
+      ).toEqual(['plain', 'S256']);
     });
 
-    const checks = await scenario.run(OPTIONS, details);
+    it('returns FAILURE when code_challenge_methods_supported is missing', async () => {
+      const scenario = new AuthorizationServerMetadataEndpointScenario();
+      mockMetadataResponse({
+        issuer: validMetadata.issuer,
+        authorization_endpoint: validMetadata.authorization_endpoint,
+        token_endpoint: validMetadata.token_endpoint,
+        response_types_supported: validMetadata.response_types_supported
+      });
 
-    expect(checks).toHaveLength(2);
+      const checks = await scenario.run(OPTIONS, details);
 
-    const check = checks[0];
-    expect(check.status).toBe('FAILURE');
-    expect(check.errorMessage).toContain('code_challenge_methods_supported');
-  });
+      expect(checks).toHaveLength(2);
 
-  it('returns FAILURE when code_challenge_methods_supported does not include S256', async () => {
-    const scenario = new AuthorizationServerMetadataEndpointScenario();
-    mockMetadataResponse({
-      ...validMetadata,
-      code_challenge_methods_supported: ['plain']
+      const check = checks[0];
+      expect(check.status).toBe('FAILURE');
+      expect(check.errorMessage).toContain('code_challenge_methods_supported');
     });
 
-    const checks = await scenario.run(OPTIONS, details);
+    it('returns FAILURE when code_challenge_methods_supported does not include S256', async () => {
+      const scenario = new AuthorizationServerMetadataEndpointScenario();
+      mockMetadataResponse({
+        ...validMetadata,
+        code_challenge_methods_supported: ['plain']
+      });
 
-    expect(checks).toHaveLength(2);
+      const checks = await scenario.run(OPTIONS, details);
 
-    const check = checks[0];
-    expect(check.status).toBe('FAILURE');
-    expect(check.errorMessage).toContain('code_challenge_methods_supported');
-  });
+      expect(checks).toHaveLength(2);
 
-  it('returns SUCCESS for CIMD check when server metadata includes client_id_metadata_document_supported=true', async () => {
-    const scenario = new AuthorizationServerMetadataEndpointScenario();
-    mockMetadataResponse({
-      ...validMetadata,
-      client_id_metadata_document_supported: true
+      const check = checks[0];
+      expect(check.status).toBe('FAILURE');
+      expect(check.errorMessage).toContain('code_challenge_methods_supported');
     });
 
-    const checks = await scenario.run(OPTIONS, details);
+    it('returns SUCCESS for CIMD check when server metadata includes client_id_metadata_document_supported=true', async () => {
+      const scenario = new AuthorizationServerMetadataEndpointScenario();
+      mockMetadataResponse({
+        ...validMetadata,
+        client_id_metadata_document_supported: true
+      });
 
-    expect(checks).toHaveLength(2);
+      const checks = await scenario.run(OPTIONS, details);
 
-    const metadataCheck = checks[0];
-    expect(metadataCheck.status).toBe('SUCCESS');
+      expect(checks).toHaveLength(2);
 
-    const cimdCheck = checks[1];
-    expect(cimdCheck.id).toBe('authorization-server-metadata-cimd');
-    expect(cimdCheck.status).toBe('SUCCESS');
-    expect(cimdCheck.errorMessage).toBeUndefined();
-    expect(cimdCheck.details).toEqual({
-      client_id_metadata_document_supported: true
-    });
-  });
+      const metadataCheck = checks[0];
+      expect(metadataCheck.status).toBe('SUCCESS');
 
-  it('returns WARNING for CIMD check when server metadata lacks client_id_metadata_document_supported', async () => {
-    const scenario = new AuthorizationServerMetadataEndpointScenario();
-    mockMetadataResponse(validMetadata);
-
-    const checks = await scenario.run(OPTIONS, details);
-
-    expect(checks).toHaveLength(2);
-
-    const metadataCheck = checks[0];
-    expect(metadataCheck.status).toBe('SUCCESS');
-
-    const cimdCheck = checks[1];
-    expect(cimdCheck.id).toBe('authorization-server-metadata-cimd');
-    expect(cimdCheck.status).toBe('WARNING');
-    expect(cimdCheck.source).toEqual({ introducedIn: '2025-11-25' });
-    expect(cimdCheck.errorMessage).toContain(
-      'client_id_metadata_document_supported'
-    );
-  });
-
-  it('returns WARNING for CIMD check when client_id_metadata_document_supported is false', async () => {
-    const scenario = new AuthorizationServerMetadataEndpointScenario();
-    mockMetadataResponse({
-      ...validMetadata,
-      client_id_metadata_document_supported: false
+      const cimdCheck = checks[1];
+      expect(cimdCheck.id).toBe('authorization-server-metadata-cimd');
+      expect(cimdCheck.status).toBe('SUCCESS');
+      expect(cimdCheck.errorMessage).toBeUndefined();
+      expect(cimdCheck.details).toEqual({
+        client_id_metadata_document_supported: true
+      });
     });
 
-    const checks = await scenario.run(OPTIONS, details);
+    it('returns WARNING for CIMD check when server metadata lacks client_id_metadata_document_supported', async () => {
+      const scenario = new AuthorizationServerMetadataEndpointScenario();
+      mockMetadataResponse(validMetadata);
 
-    expect(checks).toHaveLength(2);
+      const checks = await scenario.run(OPTIONS, details);
 
-    const metadataCheck = checks[0];
-    expect(metadataCheck.status).toBe('SUCCESS');
+      expect(checks).toHaveLength(2);
 
-    const cimdCheck = checks[1];
-    expect(cimdCheck.id).toBe('authorization-server-metadata-cimd');
-    expect(cimdCheck.status).toBe('WARNING');
-    expect(cimdCheck.source).toEqual({ introducedIn: '2025-11-25' });
-    expect(cimdCheck.errorMessage).toContain(
-      'client_id_metadata_document_supported'
-    );
-    expect(cimdCheck.errorMessage).toContain('false');
-  });
-});
+      const metadataCheck = checks[0];
+      expect(metadataCheck.status).toBe('SUCCESS');
+
+      const cimdCheck = checks[1];
+      expect(cimdCheck.id).toBe('authorization-server-metadata-cimd');
+      expect(cimdCheck.status).toBe('WARNING');
+      expect(cimdCheck.source).toEqual({ introducedIn: '2025-11-25' });
+      expect(cimdCheck.errorMessage).toContain(
+        'client_id_metadata_document_supported'
+      );
+    });
+
+    it('returns WARNING for CIMD check when client_id_metadata_document_supported is false', async () => {
+      const scenario = new AuthorizationServerMetadataEndpointScenario();
+      mockMetadataResponse({
+        ...validMetadata,
+        client_id_metadata_document_supported: false
+      });
+
+      const checks = await scenario.run(OPTIONS, details);
+
+      expect(checks).toHaveLength(2);
+
+      const metadataCheck = checks[0];
+      expect(metadataCheck.status).toBe('SUCCESS');
+
+      const cimdCheck = checks[1];
+      expect(cimdCheck.id).toBe('authorization-server-metadata-cimd');
+      expect(cimdCheck.status).toBe('WARNING');
+      expect(cimdCheck.source).toEqual({ introducedIn: '2025-11-25' });
+      expect(cimdCheck.errorMessage).toContain(
+        'client_id_metadata_document_supported'
+      );
+      expect(cimdCheck.errorMessage).toContain('false');
+    });
+  }
+);
 
 describe('AuthorizationServerOptionsSchema', () => {
   // Dynamic import to avoid circular dependency issues at module level
   async function getSchema() {
-    const { AuthorizationServerOptionsSchema } =
-      await import('../../schemas.js');
+    const { AuthorizationServerOptionsSchema } = await import(
+      '../../schemas.js'
+    );
     return AuthorizationServerOptionsSchema;
   }
 
@@ -242,8 +251,9 @@ describe('AuthorizationServerOptionsSchema', () => {
 
 describe('printAuthorizationServerResults', () => {
   async function getPrintFn() {
-    const { printAuthorizationServerResults } =
-      await import('../../runner/authorization-server.js');
+    const { printAuthorizationServerResults } = await import(
+      '../../runner/authorization-server.js'
+    );
     return printAuthorizationServerResults;
   }
 

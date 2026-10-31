@@ -3,13 +3,15 @@
  */
 import {
   ClientScenarioForAuthorizationServer,
-  ConformanceCheck
+  ConformanceCheck,
+  ScenarioSource
 } from '../../types';
 import { startCallbackServer } from '../authorization-server/auth/helpers/createCallbackServer';
 import { request } from 'undici';
 import { createHash, randomBytes } from 'crypto';
 import { AuthorizationServerOptions } from '../../schemas';
 import { SpecReferences } from '../authorization-server/auth/spec-references';
+import { untestableCheck } from '../untestable';
 
 const REDIRECT_URI_ORIGIN = 'http://127.0.0.1';
 const REDIRECT_URI_PATH = '/callback';
@@ -35,12 +37,18 @@ function redactTokens(body: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-export class AuthorizationCodeGrantScenario implements ClientScenarioForAuthorizationServer {
+export class AuthorizationCodeGrantScenario
+  implements ClientScenarioForAuthorizationServer
+{
   private state = randomBytes(32).toString('base64url');
   private codeVerifier = '';
   private codeChallenge = '';
   name = 'authorization-code-grant';
-  readonly source = { introducedIn: '2025-03-26' } as const;
+  readonly source: ScenarioSource = {
+    introducedIn: '2025-03-26',
+    removedIn: '2026-07-28'
+  };
+  readonly metadataScenario: string = 'authorization-server-metadata-endpoint';
   description = `Test authorization code grant.
 
 **Authorization Server Implementation Requirements:**
@@ -77,11 +85,19 @@ export class AuthorizationCodeGrantScenario implements ClientScenarioForAuthoriz
         .update(this.codeVerifier)
         .digest('base64url');
 
-      const resultMetadata = details[
-        'authorization-server-metadata-endpoint'
-      ] as { body?: Record<string, unknown> };
+      const resultMetadata = details[this.metadataScenario] as
+        | { body?: Record<string, unknown> }
+        | undefined;
       if (!resultMetadata?.body) {
-        throw new Error('Invalid authorization server metadata');
+        return [
+          untestableCheck(
+            'authorization-code-grant',
+            'AuthorizationCodeGrant',
+            'Valid authorization code grant',
+            `Missing valid metadata from '${this.metadataScenario}'`,
+            [SpecReferences.OAUTH_2_1_AUTHORIZATION_CODE_GRANT]
+          )
+        ];
       }
       const metadata = resultMetadata.body;
 

@@ -32,6 +32,7 @@ import {
   listClientScenariosForSpec,
   getScenarioSpecVersions,
   listClientScenariosForAuthorizationServer,
+  listDefaultClientScenariosForAuthorizationServer,
   listClientScenariosForAuthorizationServerForSpec,
   resolveSpecVersion
 } from './scenarios';
@@ -849,10 +850,10 @@ program
       }
 
       let scenarios: string[];
-      scenarios = listClientScenariosForAuthorizationServer();
+      scenarios = listDefaultClientScenariosForAuthorizationServer();
       if (specVersionFilter) {
         scenarios = filterScenariosBySpecVersion(
-          scenarios,
+          listClientScenariosForAuthorizationServer(),
           specVersionFilter,
           'authorization'
         );
@@ -873,12 +874,6 @@ program
             outputDir,
             specVersionFilter
           );
-          if (
-            result.checks[0].status === 'SUCCESS' &&
-            result.checks[0].details
-          ) {
-            details[scenarioName] = result.checks[0].details;
-          }
           allResults.push({ scenario: scenarioName, checks: result.checks });
         } catch (error) {
           console.error(`Failed to run scenario ${scenarioName}:`, error);

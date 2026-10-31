@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthorizationCodeGrantScenario } from './authorization-code-grant.js';
+import { AuthorizationCodeGrant20260728Scenario } from './2026-07-28';
 import { request } from 'undici';
 import { startCallbackServer } from '../authorization-server/auth/helpers/createCallbackServer';
 
@@ -41,18 +42,6 @@ const METADATA_PRIVATE_KEY_JWT = {
   token_endpoint_auth_methods_supported: ['private_key_jwt']
 };
 
-const DETAILS = {
-  'authorization-server-metadata-endpoint': {
-    body: METADATA
-  }
-};
-
-const DETAILS_PRIVATE_KEY_JWT = {
-  'authorization-server-metadata-endpoint': {
-    body: METADATA_PRIVATE_KEY_JWT
-  }
-};
-
 function mockCallbackServer(
   scenario: AuthorizationCodeGrantScenario,
   buildUrl: (state: string) => string
@@ -78,7 +67,19 @@ function mockTokenResponse(body: Record<string, unknown>) {
   } as any);
 }
 
-describe('AuthorizationCodeGrantScenario', () => {
+describe.each([
+  ['2025-11-25', AuthorizationCodeGrantScenario],
+  ['2026-07-28', AuthorizationCodeGrant20260728Scenario]
+] as const)('Code grant at %s', (_v, AuthorizationCodeGrantScenario) => {
+  const metadataScenario = new AuthorizationCodeGrantScenario()
+    .metadataScenario;
+  const DETAILS = {
+    [metadataScenario]: { body: METADATA }
+  };
+  const DETAILS_PRIVATE_KEY_JWT = {
+    [metadataScenario]: { body: METADATA_PRIVATE_KEY_JWT }
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -104,6 +105,7 @@ describe('AuthorizationCodeGrantScenario', () => {
 
     const check = checks[0];
 
+    expect(check.id).toBe('authorization-code-grant');
     expect(check.status).toBe('SUCCESS');
     expect(check.errorMessage).toBeUndefined();
 
@@ -136,6 +138,7 @@ describe('AuthorizationCodeGrantScenario', () => {
 
     const check = checks[0];
 
+    expect(check.id).toBe('authorization-code-grant');
     expect(check.status).toBe('FAILURE');
     expect(check.errorMessage).toContain('Invalid state parameter');
     // CSRF enforcement: the token endpoint must never be called when state

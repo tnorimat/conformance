@@ -154,6 +154,7 @@ export interface ClientScenarioForAuthorizationServer {
   name: string;
   description: string;
   source: ScenarioSource;
+  metadataScenario?: string;
   run(
     options: AuthorizationServerOptions,
     details: Record<string, unknown>

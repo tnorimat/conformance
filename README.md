@@ -88,6 +88,34 @@ npx @modelcontextprotocol/conformance server --url <url> [--scenario <scenario>]
 - `--expected-failures <path>` - Path to YAML baseline file of known failures (see [Expected Failures](#expected-failures))
 - `--verbose` - Show verbose output
 
+### Authorization Server Testing
+
+```bash
+# Existing checks at MCP 2025-11-25
+npx @modelcontextprotocol/conformance authorization --url https://auth.example.com --client-id test-client --spec-version 2025-11-25
+
+# WIP MCP 2026-07-28 scenarios, reusing the existing 2025-11-25 checks
+npx @modelcontextprotocol/conformance authorization --url https://auth.example.com --client-id test-client --spec-version 2026-07-28
+
+# Run only the WIP code-grant scenario (matching metadata is fetched automatically)
+npx @modelcontextprotocol/conformance authorization --url https://auth.example.com --client-id test-client --scenario authorization-code-grant-2026-07-28
+```
+
+The WIP entries are `authorization-server-metadata-endpoint-2026-07-28` and
+`authorization-code-grant-2026-07-28`. They reuse the existing check IDs,
+severities, and OAuth validation logic; they do **not** yet validate new
+2026-07-28 authorization requirements. The original scenario names apply to
+versions through 2025-11-25. Without `--spec-version`, the default run retains
+the existing scenarios (including extensions) and excludes the WIP entries.
+
+Register `http://127.0.0.1:3000/callback` as the client's redirect URI, or use
+`--port` to change the callback port. The code-grant scenario prints an
+authorization URL; open it in a browser and complete authentication within five
+minutes. Use `--client-secret` for confidential clients, `--resource` for the
+MCP server's canonical URI, and `--output-dir` to save results. `--file` accepts
+the settings format in [authorization-server-settings.example.json](./examples/authorization-server-settings.example.json).
+Authorization-server tests are not part of the frozen MCP requirement sets.
+
 ## Test Results
 
 **Client Testing** - Results are saved to `results/<scenario>-<timestamp>/`:
