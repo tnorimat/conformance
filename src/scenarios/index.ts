@@ -116,6 +116,11 @@ import { AuthorizationCodeGrantScenario } from './authorization-server/authoriza
 
 // EMA Resource Authorization Server scenarios (ISSUE-470)
 import { ResourceServerMetadataScenario } from './ema/resource-authorization-server/resource-authorization-metadata';
+import {
+  ResourceServerHappyPathScenario,
+  ResourceServerHappyPathWithResourceScenario,
+  ResourceServerHappyPathWithScopeScenario
+} from './ema/resource-authorization-server/resource-authorization-happy-path';
 
 import { HttpStandardHeadersScenario } from './client/http-standard-headers';
 import {
@@ -300,7 +305,10 @@ export const clientScenariosForAuthorizationServer = new Map<
 // All scenarios for the EMA Resource Authorization Server (ISSUE-470)
 const allScenariosListForResourceAuthorizationServer: ScenarioForResourceAuthorizationServer[] =
   [
-    new ResourceServerMetadataScenario()
+    new ResourceServerMetadataScenario(),
+    new ResourceServerHappyPathScenario(),
+    new ResourceServerHappyPathWithResourceScenario(),
+    new ResourceServerHappyPathWithScopeScenario()
   ];
 
 // Scenarios map for the EMA Resource Authorization Server - built from list
